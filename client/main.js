@@ -1,61 +1,78 @@
-import data from './data/data.js';
-import clearContents from './lib/dom/clearContents.js';
-import { copy, shake, addClass, getNode, showAlert, getRandom, insertLast, removeClass, isNumericString } from './lib/index.js';
+import { attr, clearContents, diceAnimation, endScroll, getNode, getNodes, insertLast } from "./lib/index.js";
 
 
-// [phase-1]
-// 1. 주접 떨기 버튼을 클릭하는 함수
-//    - 주접 떨기 버튼 가져오기
-//    - 이벤트 연결하기 addEventListener('click')
+// 1. 주사위 애니메이션
+// 2. 주사위 굴리기 버튼을 클릭하면 diceAnimation() 실행될 수 있도록
 
-// 2. input 값 가져오기
 
-// 3. data 함수에서 주접 1개 꺼내기
+const [rollingButton, recordButton, resetButton] = getNodes('.buttonGroup > button');
+const recordListWrapper = getNode('.recordListWrapper');
 
-// [phase-2]
-// 1. 아무 값도 입력 받지 못했을 때 예외처리(콘솔 출력)
+let count = 0;
+let total = 0;
 
-const submit = getNode('#submit');
-const nameField = getNode('#nameField');
-const result = getNode('.result')
+function createItem(value){
+  const template = `
+    <tr>
+      <td>${++count}</td>
+      <td>${value}</td>
+      <td>${total += value}</td>
+    </tr>
+  `
+  return template
+}
 
-function handleSubmit(e) {
-  e.preventDefault();
+function renderRecordItem(){
+  const diceValue = +attr(getNode('#cube'), 'dice')
 
-  const name = nameField.value;
-  const list = data(name);
-  const pick = list[getRandom(list.length)];
+  insertLast('.recordList tbody', createItem(diceValue));
 
-  if(!name || name.replace(/\s*/g, '') === ''){
-   
-    showAlert('.alert-error', '공백은 허용하지 않습니다.')
-    
-    shake('#nameField').restart();
+  // 1. insertLast 함수 사용
+  // 2. template 전달
+  // 3. diceValue interpolation(보간법) 하기 ex)<td>${diceValue}</td>
 
-    return;
-  }
+  endScroll(recordListWrapper);
+}
+
+const handleRollingDice = (() => {
+
   
-  if(!isNumericString(name)){
-    showAlert('.alert-error', '제대로된 이름을 입력해 주세요.')
-    return;
+  let isClicked = false;
+  let stopAnimation;
+
+  return ()=>{
+    if(!isClicked){
+      console.log('클릭 첫 번째');
+      stopAnimation  = setInterval(diceAnimation, 100);
+      recordButton.disabled = true;
+      resetButton.disabled = true;
+    }
+    else{
+      console.log('클릭 두 번째');
+      clearInterval(stopAnimation);
+      recordButton.disabled = false;
+      resetButton.disabled = false;
+    }
+  
+  
+    isClicked = !isClicked;
   }
+})()
 
-  console.log(pick);
+function handleRecord(){
+  recordListWrapper.hidden = false;
 
-  clearContents(result);
-  insertLast(result,pick);
+  renderRecordItem()
 }
 
-function handleCopy(){
-  const text = result.textContent;
+function handleReset(){
+  recordListWrapper.hidden = true;
 
-  if(nameField.value){
-    copy(text)
-    .then(()=>{
-      showAlert('.alert-success', '클립보드 복사 완료!');
-    });
-  }
+  clearContents('tbody');
+  count = 0;
+  total = 0;
 }
 
-submit.addEventListener('click', handleSubmit);
-result.addEventListener('click', handleCopy);
+rollingButton.addEventListener('click',handleRollingDice)
+recordButton.addEventListener('click',handleRecord)
+resetButton.addEventListener('click', handleReset)
