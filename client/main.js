@@ -1,82 +1,61 @@
+import data from './data/data.js';
+import clearContents from './lib/dom/clearContents.js';
+import { copy, shake, addClass, getNode, showAlert, getRandom, insertLast, removeClass, isNumericString } from './lib/index.js';
 
-// named export (이름 내보내기) -> 중괄호 필수
 
-// default export (기본 내보내기) 무조건 1개 -> 중괄호 없이 가능
+// [phase-1]
+// 1. 주접 떨기 버튼을 클릭하는 함수
+//    - 주접 떨기 버튼 가져오기
+//    - 이벤트 연결하기 addEventListener('click')
 
-import { 
-  attr, 
-  getNode, 
-  insertLast, 
-  clearContents, 
-} from "./lib/index.js";
+// 2. input 값 가져오기
 
-// 1. input value 값 가져오기 (first, second)
-//    - input 선택하기
-//    - input에게 input 이벤트를 걸어준다.
-//    - input.value 값을 가져온다.
+// 3. data 함수에서 주접 1개 꺼내기
 
-// 2. 숫자 더하기
-//    - 숫자 형변환
+// [phase-2]
+// 1. 아무 값도 입력 받지 못했을 때 예외처리(콘솔 출력)
 
-// 3. result 내용 비우기
-//    - clearContents
+const submit = getNode('#submit');
+const nameField = getNode('#nameField');
+const result = getNode('.result')
 
-const first = getNode('#firstNumber');
-const second = getNode('#secondNumber');
-const result = getNode('.result');
-const clear = getNode('#clear');
-
-function handleInput() {
-  const firstValue = Number(first.value); // 명시적 형변환
-  const secondValue = +second.value; // 암시적 형변환
-  const total = firstValue + secondValue;
-
-  clearContents(result);
-
-  insertLast(result, total);
-}
-
-function handleClear(e){
+function handleSubmit(e) {
   e.preventDefault();
 
-  clearContents(first);
-  clearContents(second);
-  result.textContent = '-';
-}
+  const name = nameField.value;
+  const list = data(name);
+  const pick = list[getRandom(list.length)];
 
-first.addEventListener('input', handleInput);
-second.addEventListener('input', handleInput);
-clear.addEventListener('click', handleClear);
-
-
-function phase2(){
-  const calculator = getNode('.calculator');
-  const result = getNode('.result');
-  const clear = getNode('#clear');
-  const numberInputs = [...document.querySelectorAll('input:not(#clear)')]
-
-
-
-  function handleInput(){
-
-    const total = numberInputs.reduce((acc,cur)=> acc + Number(cur.value),0)
+  if(!name || name.replace(/\s*/g, '') === ''){
+   
+    showAlert('.alert-error', '공백은 허용하지 않습니다.')
     
-    clearContents(result);
-    insertLast(result,total);
+    shake('#nameField').restart();
+
+    return;
+  }
+  
+  if(!isNumericString(name)){
+    showAlert('.alert-error', '제대로된 이름을 입력해 주세요.')
+    return;
   }
 
+  console.log(pick);
 
-
-
-
-  function handleClear(e){
-    e.preventDefault();
-    numberInputs.forEach(clearContents);
-    result.textContent = '-';
-  }
-
-
-
-  calculator.addEventListener('input',handleInput);
-  clear.addEventListener('click',handleClear);
+  clearContents(result);
+  insertLast(result,pick);
 }
+
+function handleCopy(){
+  const text = result.textContent;
+
+  if(nameField.value){
+    copy(text)
+    .then(()=>{
+      showAlert('.alert-success', '클립보드 복사 완료!');
+    });
+  }
+}
+
+submit.addEventListener('click', handleSubmit);
+result.addEventListener('click', handleCopy);
